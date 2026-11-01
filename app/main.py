@@ -2,7 +2,8 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
 
-from animation_generator import run_manim
+from animation_generator import list_videos, run_manim
+from image_generator import generate_image as generate_sd_image, list_images
 from llm_model import generate_code
 
 app = Flask(__name__)
@@ -35,6 +36,33 @@ def generate_animation():
         return jsonify({"video_url": video_url})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/generate-image", methods=["POST"])
+def generate_image():
+    try:
+        prompt = (request.json or {}).get("prompt", "").strip()
+        if not prompt:
+            return jsonify({"error": "Prompt is required"}), 400
+
+        image_url = generate_sd_image(prompt)
+
+        return jsonify({"image_url": image_url})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/history", methods=["GET"])
+def history():
+    images = [
+        {"type": "image", "url": f"/media/images/{p.name}"}
+        for p in list_images()
+    ]
+    videos = [
+        {"type": "video", "url": f"/{p.relative_to(REPO_ROOT)}"}
+        for p in list_videos()
+    ]
+    return jsonify({"images": images, "videos": videos})
 
 
 @app.route("/<path:filename>")

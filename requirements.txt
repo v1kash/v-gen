@@ -2,5 +2,15 @@ flask
 python-dotenv
 requests
 transformers
-torch
+diffusers[torch]
+accelerate
 manim
+
+# Stable Diffusion runs on an NVIDIA GPU via CUDA.
+# The default PyPI `torch` build is CPU-only, which forces the pipeline onto CPU.
+# Install the CUDA-enabled build instead (pick the one matching your driver):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+#   # or: pip install torch --index-url https://download.pytorch.org/whl/cu118
+#
+# Then reinstall the rest of the stack:
+#   pip install -r requirements.txt

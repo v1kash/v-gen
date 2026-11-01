@@ -26,6 +26,17 @@ def _find_latest_video() -> Path:
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
+def list_videos() -> list[Path]:
+    """Return all mp4 files found in the media directories, newest first."""
+    found = []
+    for media_dir in (REPO_ROOT / "media", VIDEOS_DIR):
+        if media_dir.is_dir():
+            found.extend(
+                p for p in media_dir.rglob("*.mp4") if "partial_movie_files" not in p.parts
+            )
+    return sorted(set(found), key=lambda p: p.stat().st_mtime, reverse=True)
+
+
 def run_manim(code: str) -> str:
     """Render the given Manim code and return the public URL of the video."""
     scene_name = _scene_name(code)
