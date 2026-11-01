@@ -1,0 +1,30 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables / secrets
+.env
+
+# Generated Manim media / videos
+media/
+videos/
+*.mp4
+*.mov
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Packaging
+*.egg-info/
