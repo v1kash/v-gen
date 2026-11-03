@@ -40,6 +40,26 @@ If you don't have an NVIDIA GPU, install the default CPU build:
 pip install torch
 ```
 
+## System dependencies (Linux / WSL)
+
+Manim depends on `pycairo` and `manimpango`, which are compiled from source on Linux
+(PyPI only ships Windows/macOS wheels). Install a C toolchain plus the Cairo/Pango
+development headers first:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential python3-dev pkg-config \
+    libcairo2-dev libpango1.0-dev ffmpeg
+```
+
+`protobuf` is also required so `transformers` can read the LTX-Video tokenizer
+(SentencePiece). Without it, video generation fails with
+`Error parsing line ... spiece.model`:
+
+```bash
+pip install protobuf
+```
+
 ## Install Python dependencies
 
 ```bash

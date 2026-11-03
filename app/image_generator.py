@@ -8,6 +8,15 @@ from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 REPO_ROOT = Path(__file__).resolve().parent.parent
 GENERATED_DIR = REPO_ROOT / "media" / "images"
 DEFAULT_SD_MODEL = os.getenv("SD_MODEL", "stabilityai/stable-diffusion-xl-base-1.0")
+STYLE_PRESETS = {
+    "none": "",
+    "photorealistic": "photorealistic, realistic lighting, natural materials, detailed textures",
+    "3d": "3D render, dimensional forms, carefully shaded materials",
+    "2d": "2D illustration, clean outlines, flat colors",
+    "anime": "anime style, expressive line art, cel shading",
+    "sketch": "hand-drawn pencil sketch, graphite lines, textured paper",
+    "painting": "traditional painting, visible brush strokes, layered pigments",
+}
 
 
 def list_images() -> list[Path]:
@@ -37,7 +46,14 @@ def _get_pipe(model_id: str):
     return _pipe
 
 
-def generate_image(prompt: str, model_id: str | None = None) -> str:
+def generate_image(
+    prompt: str,
+    model_id: str | None = None,
+    *,
+    style: str = "none",
+    steps: int = 30,
+    guidance_scale: float = 5.0,
+) -> str:
     if not torch.cuda.is_available():
         raise RuntimeError(
             "CUDA is not available. Stable Diffusion requires an NVIDIA GPU. "
@@ -45,8 +61,21 @@ def generate_image(prompt: str, model_id: str | None = None) -> str:
             "and restart the backend. Note: the default PyPI torch build is CPU-only."
         )
 
+    if style not in STYLE_PRESETS:
+        raise ValueError("Invalid image style")
+    if not 15 <= steps <= 50:
+        raise ValueError("Inference steps must be between 15 and 50")
+    if not 2 <= guidance_scale <= 10:
+        raise ValueError("Guidance scale must be between 2 and 10")
+
     pipe = _get_pipe(model_id or DEFAULT_SD_MODEL)
-    result = pipe(prompt=prompt, num_inference_steps=30)
+    style_prompt = STYLE_PRESETS[style]
+    styled_prompt = f"{prompt}, {style_prompt}" if style_prompt else prompt
+    result = pipe(
+        prompt=styled_prompt,
+        num_inference_steps=steps,
+        guidance_scale=guidance_scale,
+    )
     image = result.images[0]
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
     filename = f"generated_{int(time.time())}.png"

@@ -2,8 +2,11 @@ flask
 python-dotenv
 requests
 transformers
-diffusers[torch]
+sentencepiece
+protobuf
+diffusers[torch]>=0.39.0
 accelerate
+imageio[ffmpeg]
 manim
 
 # Stable Diffusion runs on an NVIDIA GPU via CUDA.

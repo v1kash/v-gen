@@ -1,10 +1,36 @@
 import re
+import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VIDEOS_DIR = REPO_ROOT / "videos"
+
+
+def _manim_command() -> list[str]:
+    """Return the command used to invoke Manim.
+
+    ``pip install --user`` places the ``manim`` script in ``~/.local/bin``,
+    which is often not on PATH (especially when the server is launched from a
+    different shell). Prefer an executable we can find, then fall back to
+    ``python -m manim`` so the CLI works without PATH changes.
+    """
+    exe = shutil.which("manim")
+    if exe:
+        return [exe]
+
+    # Console scripts next to the running interpreter (virtualenvs, pipx, etc.).
+    for candidate in (
+        Path(sys.executable).parent / "manim",
+        Path.home() / ".local" / "bin" / "manim",
+    ):
+        if candidate.is_file():
+            return [str(candidate)]
+
+    # Last resort: run Manim as a module from the same interpreter.
+    return [sys.executable, "-m", "manim"]
 
 
 def _scene_name(code: str) -> str:
@@ -45,12 +71,20 @@ def run_manim(code: str) -> str:
         script_path = Path(tmp_dir) / "generated_animation.py"
         script_path.write_text(code)
 
-        result = subprocess.run(
-            ["manim", "-pql", str(script_path), scene_name],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                [*_manim_command(), "-pql", str(script_path), scene_name],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as exc:
+            raise RuntimeError(
+                "Manim is not installed or not on PATH. Install it with "
+                "'pip install manim' (see requirements.txt) and make sure the "
+                "'manim' executable is available in the same environment that "
+                "runs this server."
+            ) from exc
         if result.returncode != 0:
             raise RuntimeError(f"Manim rendering failed:\n{result.stdout}\n{result.stderr}")
 
